@@ -30,7 +30,7 @@ class FrequencyData:
     def listFrequencies(self):
         print( ''.join(str(k)+'\n' for k in self.frequencies.keys()))
     
-    def toCSV(self, filename='', separator='\t'):
+    def toCSV(self, filename='', separator=','):
         
         if filename == '':
             for char in self.data_file:
@@ -40,7 +40,7 @@ class FrequencyData:
                     break
             self.dataframe.to_csv(f'reformatted_{filename}.csv', sep=separator)
         else:
-            self.dataframe.to_csv(f'reformatted_{filename}.csv', sep=separator)
+            self.dataframe.to_csv(f'{filename}.csv', sep=separator)
             
     def plot(self, time_stop=None, freq='63 Hz', prev=True, avg=True, graph_size=(8,6)):
         
