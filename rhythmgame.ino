@@ -3,9 +3,6 @@ const int strobePin = 2; // strobe is attached to digital pin 2
 const int resetPin = 3;  // reset is attached to digital pin 3
 
 
-
-boolean beat0;
-
 //const long read_freq = 1000;
 //long next_read_freq;
 
@@ -14,8 +11,9 @@ int runningSumValues[5]; //array to hold past values for running sum
 
 #define LENGTH(a) sizeof(a)/sizeof(a[0]) //gets length of array
 
-int curr_threshold = 0; 
-int noise_threshold = 300; 
+//int curr_threshold = 0; 
+bool beat = false; 
+const int noise_threshold = 300; 
 
 
 void setup()
@@ -71,35 +69,33 @@ else {
 }
 
 
+int getThreshold() {
+    int sum;
+    for(int i = 0; i < LENGTH(runningSumValues); i++) {
+        sum += runningSumValues[i]; 
+    }
 
-void updateRunningSum(int curr_specval) {
-    curr_threshold = 0; 
+    return sum; 
+}
+
+void updateRunningSum(int curr_specval, bool curr_beat) {
 
     int temp[LENGTH(runningSumValues)]; 
     
-    if(beat0) {
-      temp[0] = curr_specval; 
-       
-    }
+    temp[LENGTH(runningSumValues)-1] = curr_specval; 
 
-    else {
+    if(!curr_beat)  {
       
-      temp[0] = curr_specval; 
-
-      for(int i = 0; i < LENGTH(runningSumValues) - 1; i++) {
-        temp[i+1] = runningSumValues[i]; 
+      for(int i = LENGTH(runningSumValues) - 2; i >= 0 ; i--) {
+        temp[i] = runningSumValues[i+1]; 
       }
 
     }
 
     for(int i = 0; i < LENGTH(runningSumValues); i++) {
-      runningSumValues[i] = temp[i]; 
+      runningSumValues[i] = temp[i];
     }
 
-
-    for(int i = 0; i < LENGTH(runningSumValues); i++) {
-      curr_threshold += runningSumValues[i]; 
-    }
 
 }
 
@@ -110,14 +106,13 @@ void loop()
   //printspectrum();
 
   
-  readspectrum();
-
-  beat0 = (LENGTH(runningSumValues)*spectrumValue[0] >= curr_threshold) && (spectrumValue[0] > noise_threshold); 
-  updateRunningSum(spectrumValue[0]); 
+  readspectrum(); 
+  beat =  (spectrumValue[0] > noise_threshold) && (LENGTH(runningSumValues)*spectrumValue[0] >= getThreshold());  
+  updateRunningSum(beat, spectrumValue[0]); 
   
   
   //printspectrum(3, true);
-  Serial.println(beat0); 
+  Serial.println(beat); 
   
  
   
