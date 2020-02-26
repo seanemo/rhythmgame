@@ -5,18 +5,17 @@ const int resetPin = 3;  // reset is attached to digital pin 3
 
 //const long read_freq = 1000;
 //long next_read_freq;
-#define SPECVAL_LENGTH 7 //gets length of array
-#define RUNSUM_LENGTH 5
 
 int spectrumValue[7]; // array to hold a2d values
-int runningSumValues[SPECVAL_LENGTH][5]; //array to hold past values for running sum
+int runningSumValues[5]; //array to hold past values for running sum
 
-
+#define LENGTH(a) sizeof(a)/sizeof(a[0]) //gets length of array
 
 //int curr_threshold = 0; 
-bool beats[SPECVAL_LENGTH]; 
+bool beat = false; 
 const int noise_threshold = 300; 
 
+int counter = 0; // This will keep track of how many times we have written to the array 
 
 void setup()
 {
@@ -71,43 +70,33 @@ else {
 }
 
 
-int getThreshold(int band) {
+int getThreshold() {
     int sum;
-    for(int i = 0; i < RUNSUM_LENGTH; i++) {
-        sum += runningSumValues[band][i]; 
+    for(int i = 0; i < LENGTH(runningSumValues); i++) {
+        sum += runningSumValues[i]; 
     }
 
     return sum; 
 }
 
-void updateRunningSum(int band, bool curr_beat) {
-
-    int curr_specval = spectrumValue[band]; 
-
-    int temp[RUNSUM_LENGTH]; 
-    
-    temp[0] = curr_specval; // 0th element is most recent value, last element is oldest 
-
-    if(curr_beat)  {
-      
-      for(int i = 0; i < RUNSUM_LENGTH - 1; i++) {
-        temp[i+1] = curr_specval; 
-      }
-    }
-     else {
-      for(int i = 0; i < RUNSUM_LENGTH - 1; i++) {
-        temp[i+1] = runningSumValues[band][i]; 
-      }
-     }
-
-    
-
-    for(int i = 0; i < RUNSUM_LENGTH; i++) {
-      runningSumValues[band][i] = temp[i];
+void updateRunningSum(int curr_specval, bool curr_beat) {
+    if(counter == LENGTH(runningSumValues)) 
+    {
+        counter = 0
     }
 
+    if(bool) { 
+        for(int i = 0; i < LENGTH(runningSumValues); i++) {
+            runningSumValues[i] = curr_specval;
+        }
+    }
+    else {
+        runningSumValues[counter] = curr_specval; 
+        counter++; 
+    }
 
 }
+
 
 void loop()
 {
@@ -116,22 +105,12 @@ void loop()
 
   
   readspectrum(); 
-
-  for(int i = 0; i < SPECVAL_LENGTH; i++) {
-    beats[i] = (spectrumValue[i] > noise_threshold) && (5*spectrumValue[i] >= getThreshold(i));
-    //Serial.println(beats[i]); 
-    updateRunningSum(beats[i], spectrumValue[i]);
-    Serial.print((i+1)*beats[i]); 
-    Serial.print(", "); 
-  }
-  Serial.print("\n"); 
-  
-  
-   
+  beat =  (spectrumValue[0] > noise_threshold) && (LENGTH(runningSumValues)*spectrumValue[0] >= getThreshold());  
+  updateRunningSum(beat, spectrumValue[0]); 
   
   
   //printspectrum(3, true);
-  
+  Serial.println(beat); 
   
  
   
