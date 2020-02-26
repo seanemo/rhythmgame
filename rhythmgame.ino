@@ -75,14 +75,13 @@ void updateRunningSum(int band, bool curr_beat) {
 
     int curr_specval = spectrumValue[band]; 
    
-    if(curr_beat) 
-    {
+    if(curr_beat) {
         for(int i = 0; i < RUNSUM_LENGTH; i++) {
             runningSumValues[band][i] = curr_specval;
     }
+    }
 
-    else 
-    {
+    else {
         runningSumValues[band][writeIndex] = curr_specval; 
         writeIndex++;
     }
@@ -106,22 +105,24 @@ void detectBeat() {
     beats[i] = (spectrumValue[i] > noise_threshold) && (5*spectrumValue[i] >= getThreshold(i));
     //Serial.println(beats[i]); 
     updateRunningSum(beats[i], spectrumValue[i]);
-    Serial.print((i+1)*beats[i]); 
-    Serial.print(", "); 
   }
 }
 
 void loop()
 {
-  //printspectrum();
 
-  
   readspectrum(); 
   detectBeat(); 
+
+  // Test Code
+
+  for(int i = 0; i < 7; i++) {
+    Serial.print(beats[i]); //mul by i+1 to separate pulses out for each band
+    Serial.print(", "); 
+  }
   Serial.print("\n"); 
+
+ // End Test Code 
   
-  
-  //printspectrum(3, true);
- 
   
 }
