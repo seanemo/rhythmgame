@@ -11,9 +11,8 @@ int runningSumValues[5]; //array to hold past values for running sum
 
 #define LENGTH(a) sizeof(a)/sizeof(a[0]) //gets length of array
 
-//int curr_threshold = 0; 
-bool beat = false; 
-const int noise_threshold = 300; 
+//int curr_threshold = 0;
+int noise_threshold = 300;
 
 
 void setup()
@@ -22,32 +21,32 @@ void setup()
   pinMode(strobePin, OUTPUT);
   pinMode(resetPin, OUTPUT);
   analogReference(DEFAULT);
-  
+
   digitalWrite(resetPin, LOW);
   digitalWrite(strobePin, HIGH);
-  
+
   Serial.begin(9600);
   //long t0 = millis();
   //next_read_freq = t0;
   /*
   long int start_time = millis();
 
-  long int duration = 300000; 
-  */ 
+  long int duration = 300000;
+  */
 
-  
+
 }
 
 void readspectrum(){
   digitalWrite(resetPin, HIGH);
   digitalWrite(resetPin, LOW);
   delayMicroseconds(75);
-  
+
   for (int i = 0; i < 7; i++)
     {
-      delayMicroseconds(36); 
+      delayMicroseconds(36);
       digitalWrite(strobePin, LOW);
-      delayMicroseconds(36); 
+      delayMicroseconds(36);
       spectrumValue[i] = analogRead(analogPin);
       //Serial.println(analogRead(analogPin));
       digitalWrite(strobePin, HIGH);
@@ -64,30 +63,25 @@ void printspectrum(int max_index, bool cumulative){
 }
 
 else {
-  Serial.println(spectrumValue[max_index]); 
+  Serial.println(spectrumValue[max_index]);
 }
 }
 
 
 int getThreshold() {
-    int sum;
-    for(int i = 0; i < LENGTH(runningSumValues); i++) {
-        sum += runningSumValues[i]; 
-    }
-
-    return sum; 
+    while()
 }
 
 void updateRunningSum(int curr_specval, bool curr_beat) {
 
-    int temp[LENGTH(runningSumValues)]; 
-    
-    temp[0] = curr_specval; // 0th element is most recent value, last element is oldest 
+    int temp[LENGTH(runningSumValues)];
+
+    temp[LENGTH(runningSumValues)-1] = curr_specval;
 
     if(!curr_beat)  {
-      
-      for(int i = 0; i < LENGTH(runningSumValues) - 1; i++) {
-        temp[i+1] = runningSumValues[i]; 
+
+      for(int i = LENGTH(runningSumValues) - 2; i >= 0 ; i--) {
+        temp[i] = runningSumValues[i+1];
       }
 
     }
@@ -105,15 +99,16 @@ void loop()
   //readspectrum();
   //printspectrum();
 
-  
-  readspectrum(); 
-  beat =  (spectrumValue[0] > noise_threshold) && (LENGTH(runningSumValues)*spectrumValue[0] >= getThreshold());  
-  updateRunningSum(beat, spectrumValue[0]); 
-  
-  
+
+  readspectrum();
+  int curr_threshold = getThreshold();
+  bool beat =  (spectrumValue[0] > noise_threshold) && (LENGTH(runningSumValues)*spectrumValue[0] >= curr_threshold);
+  updateRunningSum(beat, spectrumValue[0]);
+
+
   //printspectrum(3, true);
-  Serial.println(beat); 
-  
- 
-  
+  Serial.println(beat);
+
+
+
 }

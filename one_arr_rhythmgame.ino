@@ -15,6 +15,7 @@ int runningSumValues[5]; //array to hold past values for running sum
 bool beat = false; 
 const int noise_threshold = 300; 
 
+int counter = 0; // This will keep track of how many times we have written to the array 
 
 void setup()
 {
@@ -79,23 +80,20 @@ int getThreshold() {
 }
 
 void updateRunningSum(int curr_specval, bool curr_beat) {
-
-    int temp[LENGTH(runningSumValues)]; 
-    
-    temp[0] = curr_specval; // 0th element is most recent value, last element is oldest 
-
-    if(!curr_beat)  {
-      
-      for(int i = 0; i < LENGTH(runningSumValues) - 1; i++) {
-        temp[i+1] = runningSumValues[i]; 
-      }
-
+    if(counter == LENGTH(runningSumValues)) 
+    {
+        counter = 0
     }
 
-    for(int i = 0; i < LENGTH(runningSumValues); i++) {
-      runningSumValues[i] = temp[i];
+    if(bool) { 
+        for(int i = 0; i < LENGTH(runningSumValues); i++) {
+            runningSumValues[i] = curr_specval;
+        }
     }
-
+    else {
+        runningSumValues[counter] = curr_specval; 
+        counter++; 
+    }
 
 }
 
