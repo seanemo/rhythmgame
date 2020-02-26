@@ -5,12 +5,12 @@ const int resetPin = 3;  // reset is attached to digital pin 3
 
 //const long read_freq = 1000;
 //long next_read_freq;
-#define SPECVAL_LENGTH 7 //gets length of array
+#define SPECVAL_LENGTH 7 
 #define RUNSUM_LENGTH 5
 
 int spectrumValue[7]; // array to hold a2d values
 int runningSumValues[SPECVAL_LENGTH][5]; //array to hold past values for running sum
-
+int writeIndex; // keeps track of what place to write future values 
 
 
 //int curr_threshold = 0; 
@@ -71,6 +71,26 @@ else {
 }
 
 
+void updateRunningSum(int band, bool curr_beat) {
+
+    int curr_specval = spectrumValue[band]; 
+   
+    if(curr_beat) 
+    {
+        for(int i = 0; i < RUNSUM_LENGTH; i++) {
+            runningSumValues[band][i] = curr_specval;
+    }
+
+    else 
+    {
+        runningSumValues[band][writeIndex] = curr_specval; 
+        writeIndex++;
+    }
+    
+
+}
+
+
 int getThreshold(int band) {
     int sum;
     for(int i = 0; i < RUNSUM_LENGTH; i++) {
@@ -80,43 +100,8 @@ int getThreshold(int band) {
     return sum; 
 }
 
-void updateRunningSum(int band, bool curr_beat) {
 
-    int curr_specval = spectrumValue[band]; 
-
-    int temp[RUNSUM_LENGTH]; 
-    
-    temp[0] = curr_specval; // 0th element is most recent value, last element is oldest 
-
-    if(curr_beat)  {
-      
-      for(int i = 0; i < RUNSUM_LENGTH - 1; i++) {
-        temp[i+1] = curr_specval; 
-      }
-    }
-     else {
-      for(int i = 0; i < RUNSUM_LENGTH - 1; i++) {
-        temp[i+1] = runningSumValues[band][i]; 
-      }
-     }
-
-    
-
-    for(int i = 0; i < RUNSUM_LENGTH; i++) {
-      runningSumValues[band][i] = temp[i];
-    }
-
-
-}
-
-void loop()
-{
-  //readspectrum();
-  //printspectrum();
-
-  
-  readspectrum(); 
-
+void detectBeat() {
   for(int i = 0; i < SPECVAL_LENGTH; i++) {
     beats[i] = (spectrumValue[i] > noise_threshold) && (5*spectrumValue[i] >= getThreshold(i));
     //Serial.println(beats[i]); 
@@ -124,15 +109,19 @@ void loop()
     Serial.print((i+1)*beats[i]); 
     Serial.print(", "); 
   }
+}
+
+void loop()
+{
+  //printspectrum();
+
+  
+  readspectrum(); 
+  detectBeat(); 
   Serial.print("\n"); 
   
   
-   
-  
-  
   //printspectrum(3, true);
-  
-  
  
   
 }
