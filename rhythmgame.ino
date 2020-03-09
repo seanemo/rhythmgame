@@ -21,18 +21,27 @@ const int button4 = 50;
 
 //const long read_freq = 1000;
 //long next_read_freq;
-const int specval_len = 7;
-const int runsum_len  = 5;
+#define SPECVAL_LENGTH 7 
+#define RUNSUM_LENGTH 5
 
 int spectrumValue[7]; // array to hold a2d values
-int runningSumValues[specval_len][runsum_len]; //array to hold past values for running sum
+int runningSumValues[SPECVAL_LENGTH][RUNSUM_LENGTH]; //array to hold past values for running sum
 int writeIndex; // keeps track of what place to write future values 
 long int pastrow;
+long int pastcol;
+long int past;
+long int past1;
 
 
 //int curr_threshold = 0; 
-bool beats[specval_len]; 
+bool beats[SPECVAL_LENGTH]; 
 const int noise_threshold = 300; 
+
+//led col checkers
+bool newbeat;
+int ledmatrix[7][4];
+int temp[7][4];
+
 
 
 void setup()
@@ -61,7 +70,7 @@ void setup()
   digitalWrite(resetPin, LOW);
   digitalWrite(strobePin, HIGH);
   
-  Serial.begin(9600);
+  Serial.begin(115200);
   //long t0 = millis();
   //next_read_freq = t0;
   /*
@@ -69,9 +78,10 @@ void setup()
 
   long int duration = 300000; 
   */ 
-  PORTA = 64;
-  PORTL = 0;
-  
+  PORTA = 0;
+  PORTL = 15;
+  past = millis();
+  past1 = millis();
   
 }
 
@@ -109,15 +119,18 @@ void printspectrum(int band_index, bool cumulative = true){ //takes an integer v
 
 void updateRunningSum(int band_index, bool curr_beat) {
 
+    int curr_specval = spectrumValue[band_index]; 
+   
     if(curr_beat) {
-        for(int i = 0; i < runsum_len; i++) {
-            runningSumValues[band_index][i] = spectrumValue[band_index]; // accesses the current value for a particular band from spectrumValue
+        for(int i = 0; i < RUNSUM_LENGTH; i++) {
+            runningSumValues[band_index][i] = curr_specval;
         }
     }
 
     else {
-        runningSumValues[band_index][writeIndex] = spectrumValue[band_index]; 
-        if (++writeIndex > runsum_len - 1){ // writeIndex is first incremented, and then the value is returned so the conditional can be evaluated
+        runningSumValues[band_index][writeIndex] = curr_specval; 
+        writeIndex++;
+        if (writeIndex > RUNSUM_LENGTH - 1){
           writeIndex = 0;
         }
     }
@@ -126,7 +139,7 @@ void updateRunningSum(int band_index, bool curr_beat) {
 
 int getThreshold(int band_index) {
     int sum;
-    for(int i = 0; i < runsum_len; i++) {
+    for(int i = 0; i < RUNSUM_LENGTH; i++) {
         sum += runningSumValues[band_index][i]; 
     }
 
@@ -135,8 +148,8 @@ int getThreshold(int band_index) {
 
 
 void detectBeat() {
-  for(int i = 0; i < specval_len; i++) {
-    beats[i] = (spectrumValue[i] > noise_threshold) && (runsum_len*spectrumValue[i] >= getThreshold(i));
+  for(int i = 0; i < SPECVAL_LENGTH; i++) {
+    beats[i] = (spectrumValue[i] > noise_threshold) && (RUNSUM_LENGTH*spectrumValue[i] >= getThreshold(i));
     //Serial.println(beats[i]); 
     updateRunningSum(i, beats[i]);
   }
@@ -154,31 +167,133 @@ void printbeat(int band_index, bool cumulative=true){
     }
     Serial.print("\n");
 }
-  
-void ledrowdrop(){
-  if (millis()- pastrow > 250){
-    PORTA /= 2;
-    pastrow = millis();
-    if (PORTA == 0){
-      PORTA = 64;
+
+void colrandom(){
+  newbeat = false;
+  int colNum = random(4) / 1;
+  ledmatrix[0][colNum] = 1;
+}
+
+void lightLED(){
+    for (int i=0;i<7;i++){
+      for (int j=0;j<4;j++){
+        if (ledmatrix[i][j] == 1){
+          if (i < 6){
+            temp[i+1][j] = 1;
+          }
+           
+          if(i == 0){
+            digitalWrite(row7,HIGH);
+          }
+          if(i == 1){
+            digitalWrite(row6,HIGH);
+          }
+          if(i == 2){
+            digitalWrite(row5,HIGH);
+          }
+          if(i == 3){
+            digitalWrite(row4,HIGH);
+          }
+          if(i == 4){
+            digitalWrite(row3,HIGH);
+          }
+          if(i == 5){
+            digitalWrite(row2,HIGH);
+          }
+          if(i == 6){
+            digitalWrite(row1,HIGH);
+          }
+          if(j == 0){
+            digitalWrite(col1,LOW);
+          }
+          if(j == 1){
+            digitalWrite(col2,LOW);
+          }
+          if(j == 2){
+            digitalWrite(col3,LOW);
+          }
+          if(j == 3){
+            digitalWrite(col4,LOW);
+          }
+          //Serial.println(ledmatrix[i][j]);
+          //delay(3);
+          PORTL = 15;
+          PORTA = 0;
+          
+        }
+      }
+    }
+}
+void shift(){
+  for (int i=0;i<7;i++){
+    for(int j=0;j<4;j++){
+      ledmatrix[i][j] = temp[i][j];
     }
   }
-  
+  for (int i=0;i<7;i++){
+    for(int j=0;j<4;j++){
+      temp[i][j] = 0;
+    }
+  }
+}
+
+void printArray(int a[7][4]){
+  for(int i=0;i<7;i++){
+    for(int j=0;j<4;j++){
+      Serial.print(a[i][j]);
+      Serial.print(",");
+      if (j==3){
+        Serial.print("\n");
+      }
+    }
+  }
 }
   
+void ledrowdrop(){
+  
+  if (newbeat == true){
+    colrandom();
+    //PORTA += 64;
+  }
+  
+  if (millis()- pastrow > 250){
+    pastrow = millis();
+    lightLED();
+    //PORTA /= 2;
+  }  
+  /*if (PORTA == 0){
+    PORTA = 64;
+  }*/
+} 
 
 void loop(){
 
 
-  readspectrum(); 
-  detectBeat(); 
+  //readspectrum(); 
+  //detectBeat(); 
 
   // Test Code
 
   //printspectrum(7);
-  printbeat(3, true);
+  //printbeat(3, true);
+
 
  // End Test Code 
- ledrowdrop(); 
-  
+ //ledrowdrop();
+ /*if (millis()-past1 > 1000){
+  colrandom();
+  past1 = millis();
+ }*/
+ 
+ if (millis()-past > 500){
+  past = millis();
+  colrandom();
+ }
+ lightLED();
+ if (millis()- pastrow > 250){
+    pastrow = millis();
+    
+    shift(); 
+ }
+ 
 }
