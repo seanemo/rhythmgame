@@ -8,15 +8,15 @@ const int row4 = 25;
 const int row5 = 26;
 const int row6 = 27;
 const int row7 = 28;
-const int row8 = 36;
+const int row8 = 29;
 const int col1 = 49;
 const int col2 = 48;
 const int col3 = 47;
 const int col4 = 46;
-const int button1 = 53;
-const int button2 = 52;
-const int button3 = 51;
-const int button4 = 50;
+const int button1 = 37;
+const int button2 = 36;
+const int button3 = 35;
+const int button4 = 34;
 
 
 //const long read_freq = 1000;
@@ -29,8 +29,10 @@ int runningSumValues[SPECVAL_LENGTH][RUNSUM_LENGTH]; //array to hold past values
 int writeIndex; // keeps track of what place to write future values 
 long int pastrow;
 long int pastcol;
+long int ledpast;
 long int past;
 long int past1;
+long int firsttime;
 
 
 //int curr_threshold = 0; 
@@ -39,8 +41,8 @@ const int noise_threshold = 300;
 
 //led col checkers
 bool newbeat;
-int ledmatrix[7][4];
-int temp[7][4];
+int ledmatrix[8][4];
+int temp[8][4];
 
 
 
@@ -171,36 +173,43 @@ void printbeat(int band_index, bool cumulative=true){
 void colrandom(){
   newbeat = false;
   int colNum = random(4) / 1;
-  ledmatrix[0][colNum] = 1;
+  ledmatrix[1][colNum] = 1;
 }
 
 void lightLED(){
-    for (int i=0;i<7;i++){
+  if (digitalRead(button1)==HIGH){
+    ledmatrix[0][0] == 1;
+    Serial.println("1");
+  }
+    for (int i=0;i<8;i++){
       for (int j=0;j<4;j++){
         if (ledmatrix[i][j] == 1){
-          if (i < 6){
+          if (i < 7 && i > 0){
             temp[i+1][j] = 1;
           }
            
           if(i == 0){
-            digitalWrite(row7,HIGH);
+            digitalWrite(row8,HIGH);
           }
           if(i == 1){
-            digitalWrite(row6,HIGH);
+            digitalWrite(row7,HIGH);
           }
           if(i == 2){
-            digitalWrite(row5,HIGH);
+            digitalWrite(row6,HIGH);
           }
           if(i == 3){
-            digitalWrite(row4,HIGH);
+            digitalWrite(row5,HIGH);
           }
           if(i == 4){
-            digitalWrite(row3,HIGH);
+            digitalWrite(row4,HIGH);
           }
           if(i == 5){
-            digitalWrite(row2,HIGH);
+            digitalWrite(row3,HIGH);
           }
           if(i == 6){
+            digitalWrite(row2,HIGH);
+          }
+          if(i == 7){
             digitalWrite(row1,HIGH);
           }
           if(j == 0){
@@ -215,8 +224,9 @@ void lightLED(){
           if(j == 3){
             digitalWrite(col4,LOW);
           }
+            
           //Serial.println(ledmatrix[i][j]);
-          //delay(3);
+          delay(1);
           PORTL = 15;
           PORTA = 0;
           
@@ -225,15 +235,51 @@ void lightLED(){
     }
 }
 void shift(){
-  for (int i=0;i<7;i++){
+  for (int i=0;i<8;i++){
     for(int j=0;j<4;j++){
       ledmatrix[i][j] = temp[i][j];
     }
   }
-  for (int i=0;i<7;i++){
+  for (int i=0;i<8;i++){
     for(int j=0;j<4;j++){
       temp[i][j] = 0;
     }
+  }
+}
+
+void createtimingwindow(){
+  for(int i = 0; i<4;i++){
+    if(ledmatrix[6][i]==1){
+      firsttime = millis();
+    }
+  }
+}
+
+/*void timingwindow(){
+  if(millis()-firsttime <= 250){
+    if(){
+      
+    }
+  }
+}*/
+
+void detectbuttonpress(){
+  if (digitalRead(button1)==HIGH){
+    ledmatrix[0][0] = 1;
+    //digitalWrite(29,HIGH);
+    Serial.println("1");
+  }
+  if (digitalRead(button2)==HIGH){
+    ledmatrix[0][1] = 1;
+    Serial.println("2");
+  }
+  if (digitalRead(button3)==HIGH){
+    ledmatrix[0][2] = 1;
+    Serial.println("3");
+  }
+  if (digitalRead(button4)==HIGH){
+    ledmatrix[0][3] = 1;
+    Serial.println("4");
   }
 }
 
@@ -290,6 +336,7 @@ void loop(){
   colrandom();
  }
  lightLED();
+ detectbuttonpress();
  if (millis()- pastrow > 250){
     pastrow = millis();
     
