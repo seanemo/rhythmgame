@@ -1,6 +1,10 @@
+#include "CurrentSongData.h"
+#if GENERATE_BEATMAP
 const int analogPin = 0; // read from multiplexer using analog input 0
 const int strobePin = 2; // strobe is attached to digital pin 2
 const int resetPin = 3;  // reset is attached to digital pin 3
+#endif
+#if !GENERATE_BEATMAP
 const int row1 = 22;
 const int row2 = 23;
 const int row3 = 24;
@@ -17,40 +21,58 @@ const int button1 = 37;
 const int button2 = 36;
 const int button3 = 35;
 const int button4 = 34;
+#endif
 
 
 //const long read_freq = 1000;
 //long next_read_freq;
-#define SPECVAL_LENGTH 7 
-#define RUNSUM_LENGTH 5
+#if GENERATE_BEATMAP
+const int specval_len = 7; 
+const int runsum_len = 5;
 
 int spectrumValue[7]; // array to hold a2d values
-int runningSumValues[SPECVAL_LENGTH][RUNSUM_LENGTH]; //array to hold past values for running sum
+int runningSumValues[specval_len][runsum_len]; //array to hold past values for running sum
 int writeIndex; // keeps track of what place to write future values 
+#endif
+#if !GENERATE_BEATMAP
 long int pastrow;
 long int pastcol;
 long int ledpast;
 long int past;
 long int past1;
 long int firsttime;
+long int secondtime;
+long int thirdtime;
+long int fourthtime;
+#endif
 
-
+#if GENERATE_BEATMAP
 //int curr_threshold = 0; 
-bool beats[SPECVAL_LENGTH]; 
+bool beats[specval_len]; 
 const int noise_threshold = 300; 
+#endif
 
+#if !GENERATE_BEATMAP
 //led col checkers
 bool newbeat;
 int ledmatrix[8][4];
 int temp[8][4];
+int points;
+#endif
+
+
+
 
 
 
 void setup()
 {
+#if GENERATE_BEATMAP
   pinMode(analogPin, INPUT);
   pinMode(strobePin, OUTPUT);
   pinMode(resetPin, OUTPUT);
+#endif
+#if !GENERATE_BEATMAP
   pinMode(row1,OUTPUT);
   pinMode(row2,OUTPUT);
   pinMode(row3,OUTPUT);
@@ -67,11 +89,13 @@ void setup()
   pinMode(button2, INPUT);
   pinMode(button3, INPUT);
   pinMode(button4, INPUT);
+#endif
+#if GENERATE_BEATMAP
   analogReference(DEFAULT);
   
   digitalWrite(resetPin, LOW);
   digitalWrite(strobePin, HIGH);
-  
+#endif  
   Serial.begin(115200);
   //long t0 = millis();
   //next_read_freq = t0;
@@ -80,13 +104,17 @@ void setup()
 
   long int duration = 300000; 
   */ 
+#if !GENERATE_BEATMAP
   PORTA = 0;
   PORTL = 15;
   past = millis();
   past1 = millis();
+  points = 0;
+#endif
   
 }
 
+#if GENERATE_BEATMAP
 void readspectrum(){
   digitalWrite(resetPin, HIGH); //resets current frequency band_index to lowest frequency
   digitalWrite(resetPin, LOW);
@@ -124,7 +152,7 @@ void updateRunningSum(int band_index, bool curr_beat) {
     int curr_specval = spectrumValue[band_index]; 
    
     if(curr_beat) {
-        for(int i = 0; i < RUNSUM_LENGTH; i++) {
+        for(int i = 0; i < runsum_len; i++) {
             runningSumValues[band_index][i] = curr_specval;
         }
     }
@@ -132,7 +160,7 @@ void updateRunningSum(int band_index, bool curr_beat) {
     else {
         runningSumValues[band_index][writeIndex] = curr_specval; 
         writeIndex++;
-        if (writeIndex > RUNSUM_LENGTH - 1){
+        if (writeIndex > runsum_len - 1){
           writeIndex = 0;
         }
     }
@@ -141,7 +169,7 @@ void updateRunningSum(int band_index, bool curr_beat) {
 
 int getThreshold(int band_index) {
     int sum;
-    for(int i = 0; i < RUNSUM_LENGTH; i++) {
+    for(int i = 0; i < runsum_len; i++) {
         sum += runningSumValues[band_index][i]; 
     }
 
@@ -150,8 +178,8 @@ int getThreshold(int band_index) {
 
 
 void detectBeat() {
-  for(int i = 0; i < SPECVAL_LENGTH; i++) {
-    beats[i] = (spectrumValue[i] > noise_threshold) && (RUNSUM_LENGTH*spectrumValue[i] >= getThreshold(i));
+  for(int i = 0; i < specval_len; i++) {
+    beats[i] = (spectrumValue[i] > noise_threshold) && (runsum_len*spectrumValue[i] >= getThreshold(i));
     //Serial.println(beats[i]); 
     updateRunningSum(i, beats[i]);
   }
@@ -169,6 +197,8 @@ void printbeat(int band_index, bool cumulative=true){
     }
     Serial.print("\n");
 }
+#endif
+#if !GENERATE_BEATMAP
 
 void colrandom(){
   newbeat = false;
@@ -177,10 +207,6 @@ void colrandom(){
 }
 
 void lightLED(){
-  if (digitalRead(button1)==HIGH){
-    ledmatrix[0][0] == 1;
-    Serial.println("1");
-  }
     for (int i=0;i<8;i++){
       for (int j=0;j<4;j++){
         if (ledmatrix[i][j] == 1){
@@ -249,72 +275,72 @@ void shift(){
 
 void createtimingwindow(){
   for(int i = 0; i<4;i++){
-    if(ledmatrix[6][i]==1){
-      firsttime = millis();
-    }
-  }
-}
-
-/*void timingwindow(){
-  if(millis()-firsttime <= 250){
-    if(){
-      
-    }
-  }
-}*/
-
-void detectbuttonpress(){
-  if (digitalRead(button1)==HIGH){
-    ledmatrix[0][0] = 1;
-    //digitalWrite(29,HIGH);
-    Serial.println("1");
-  }
-  if (digitalRead(button2)==HIGH){
-    ledmatrix[0][1] = 1;
-    Serial.println("2");
-  }
-  if (digitalRead(button3)==HIGH){
-    ledmatrix[0][2] = 1;
-    Serial.println("3");
-  }
-  if (digitalRead(button4)==HIGH){
-    ledmatrix[0][3] = 1;
-    Serial.println("4");
-  }
-}
-
-void printArray(int a[7][4]){
-  for(int i=0;i<7;i++){
-    for(int j=0;j<4;j++){
-      Serial.print(a[i][j]);
-      Serial.print(",");
-      if (j==3){
-        Serial.print("\n");
+    if(ledmatrix[7][i]==1){
+      if(i==0){
+        firsttime = millis();
+      }
+      if(i==1){
+        secondtime = millis();
+      }
+      if(i==2){
+        thirdtime = millis();
+      }
+      if(i==3){
+        fourthtime = millis();
       }
     }
   }
 }
-  
-void ledrowdrop(){
-  
-  if (newbeat == true){
-    colrandom();
-    //PORTA += 64;
+
+void timingwindow(){
+  if(millis()-firsttime <= 250 && ledmatrix[0][0] == 1){
+    if(ledmatrix[0][0]==1){
+        points += 1;
+        Serial.println(points);
+    }
+  }
+  if(millis()-secondtime <= 250 && ledmatrix[0][1] == 1){
+    if(ledmatrix[0][1]==1){
+        points += 1;
+        Serial.println(points);
+    }
+  }
+  if(millis()-thirdtime <= 250 && ledmatrix[0][2] == 1){
+    if(ledmatrix[0][2]==1){
+        points += 1;
+        Serial.println(points);
+    }
+  }
+  if(millis()-fourthtime <= 250 && ledmatrix[0][3] == 1){
+    if(ledmatrix[0][3]==1){
+        points += 1;
+        Serial.println(points);
+    }
   }
   
-  if (millis()- pastrow > 250){
-    pastrow = millis();
-    lightLED();
-    //PORTA /= 2;
-  }  
-  /*if (PORTA == 0){
-    PORTA = 64;
-  }*/
-} 
+}
 
+void detectbuttonpress(){
+  if (digitalRead(button1)==LOW){
+    ledmatrix[0][0] = 1;
+  }
+  if (digitalRead(button2)==LOW){
+    ledmatrix[0][1] = 1;
+
+  }
+  if (digitalRead(button3)==LOW){
+    ledmatrix[0][2] = 1;
+
+  }
+  if (digitalRead(button4)==LOW){
+    ledmatrix[0][3] = 1;
+
+  }
+}
+#endif
 void loop(){
 
-
+#if GENERATE_BEATMAP
   //readspectrum(); 
   //detectBeat(); 
 
@@ -322,25 +348,27 @@ void loop(){
 
   //printspectrum(7);
   //printbeat(3, true);
-
+#endif
 
  // End Test Code 
- //ledrowdrop();
  /*if (millis()-past1 > 1000){
   colrandom();
   past1 = millis();
  }*/
- 
+#if !GENERATE_BEATMAP
  if (millis()-past > 500){
   past = millis();
   colrandom();
  }
  lightLED();
  detectbuttonpress();
+ createtimingwindow();
+ timingwindow();
  if (millis()- pastrow > 250){
     pastrow = millis();
     
     shift(); 
  }
+#endif
  
 }
