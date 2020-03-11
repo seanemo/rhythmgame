@@ -33,6 +33,7 @@ const int runsum_len = 5;
 int spectrumValue[7]; // array to hold a2d values
 int runningSumValues[specval_len][runsum_len]; //array to hold past values for running sum
 int writeIndex; // keeps track of what place to write future values 
+int prevBeat[specval_len]; //writes time last beat was recorded for each band
 #endif
 #if !GENERATE_BEATMAP
 long int pastrow;
@@ -182,6 +183,13 @@ void detectBeat() {
     beats[i] = (spectrumValue[i] > noise_threshold) && (runsum_len*spectrumValue[i] >= getThreshold(i));
     //Serial.println(beats[i]); 
     updateRunningSum(i, beats[i]);
+    
+    if beats[i] {
+
+    int curr_time = millis();
+    Serial.print(curr_time - prevBeat);
+    prevBeat = curr_time;
+    }
   }
 }
 
@@ -197,6 +205,7 @@ void printbeat(int band_index, bool cumulative=true){
     }
     Serial.print("\n");
 }
+
 #endif
 #if !GENERATE_BEATMAP
 
@@ -341,13 +350,14 @@ void detectbuttonpress(){
 void loop(){
 
 #if GENERATE_BEATMAP
-  //readspectrum(); 
-  //detectBeat(); 
+  prevBeat = millis();
+  readspectrum(); 
+  detectBeat(); 
 
   // Test Code
 
   //printspectrum(7);
-  //printbeat(3, true);
+//  printbeat(3, true);
 #endif
 
  // End Test Code 
