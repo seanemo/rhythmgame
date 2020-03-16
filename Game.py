@@ -36,15 +36,15 @@ class Game:
         song_duration = self.audioFile.duration_seconds
         with open(f"SongData/{self.songname}.dat", 'w') as data_file:
             self.selectiveCompilation()
-            with serial.Serial(self.port, self.baudrate) as ser_data:
-                ser_data.flushInput
-                #playback.play(audiofile_path) # playing audio
-                os.system(f"afplay {self.songPath}&")
+            with serial.Serial(port=self.port, baudrate=self.baudrate, timeout=song_duration) as ser_data:
+                ser_data.flushInput()
+                os.system(f"afplay {self.songPath}&") #playing audio in background
                 print(f"duration is {song_duration}")
                 start_time = time.time()
                 while time.time() - start_time <= song_duration:
-                    print(f"writing data {time.time() - start_time}")
-                    data_file.write(ser_data.readline()[:-2].decode("utf-8") + '\n')
+                    data = ser_data.readline()[:-2].decode("utf-8") 
+                    print(f"writing {data} at {time.time() - start_time}")
+                    data_file.write(data + '\n')
                 print('exited loop')
 
         """
@@ -58,10 +58,10 @@ class Game:
                     data_file.write(data)
 """
     def playGame(self):
-        print("playing game")
+        print("\nplaying game\n")
         with open(f"SongData/{self.songname}.dat") as data_file:
             self.selectiveCompilation([line for line in data_file]) # feeds a list, which can then be used by the ''.join() in selectiveCompilation()
-            os.system(f"afplay {self.songPath}&")
+            os.system(f"afplay {self.songPath}&") #playing audio in background
 
     def selectiveCompilation(self, vals=None):
         file_content = str()
@@ -70,16 +70,16 @@ class Game:
         else:
             file_content = f""" 
             #define GENERATE_BEATMAP 0
-            struct {{
-                int data_len;
-                int data_values[{3*len(vals)}];
-                }} SongData = {{.data_len = {3*len(vals)}, .data_values={{{''.join(vals)[:-2]}}} }};
+            extern int DelayData[{len(vals)}] = {{{', '.join(vals)}}};
+            extern int DelayDataLen = {len(vals)};
             """
+            print(f"Making array with {len(vals)} ints\n")
         with open("CurrentSongData.h", 'w') as currSongData:
             currSongData.write(file_content)
         compile_msg = os.popen(f"arduino-cli compile -b {self.fqbn}").read() # executes said terminal command, and returns string of output 
         export_msg = os.popen(f"arduino-cli upload -b {self.fqbn} -p {self.port}").read() # same as above
         print(compile_msg + '\n' + export_msg)
+
 
 def main():
     curr_songs = os.listdir("Songs")
@@ -90,14 +90,16 @@ def main():
 
     if songfile not in curr_songs:
         raise Exception(f"Song file {songfile} not found.")
-    arduino_info = (arduino_info[0], arduino_info[-2], 115200) # first part of tuple is usb modem num, and second part is the board type, last is baudrate
+    try:
+        arduino_info = (arduino_info[0], arduino_info[-2], 115200) # first part of tuple is usb modem num, and second part is the board type, last is baudrate
+    except IndexError:
+        raise Exception("Arduino not connected.")
     print('\t'.join(str(s) for s in arduino_info))
     newgame = Game(songfile, arduino_info)
     if f"{name}.dat" not in games:
         print(f"{songfile} not found in pre-existing game files, generating new one . . . ")
         newgame.generateBeatmap()
         print("Beatmap generated!")
-    
     newgame.playGame()
 
 if __name__ == '__main__':

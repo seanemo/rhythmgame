@@ -33,7 +33,8 @@ const int runsum_len = 5;
 int spectrumValue[7]; // array to hold a2d values
 int runningSumValues[specval_len][runsum_len]; //array to hold past values for running sum
 int writeIndex; // keeps track of what place to write future values 
-int prevBeat[specval_len]; //writes time last beat was recorded for each band
+int prevBeat; //writes time last beat was recorded for each band
+int prevBeatVal = false; // tracks value of last beat
 #endif
 #if !GENERATE_BEATMAP
 long int pastrow;
@@ -96,6 +97,7 @@ void setup()
   
   digitalWrite(resetPin, LOW);
   digitalWrite(strobePin, HIGH);
+  prevBeat = millis();     
 #endif  
   Serial.begin(115200);
   //long t0 = millis();
@@ -183,13 +185,6 @@ void detectBeat() {
     beats[i] = (spectrumValue[i] > noise_threshold) && (runsum_len*spectrumValue[i] >= getThreshold(i));
     //Serial.println(beats[i]); 
     updateRunningSum(i, beats[i]);
-    
-    if beats[i] {
-
-    int curr_time = millis();
-    Serial.print(curr_time - prevBeat);
-    prevBeat = curr_time;
-    }
   }
 }
 
@@ -206,6 +201,11 @@ void printbeat(int band_index, bool cumulative=true){
     Serial.print("\n");
 }
 
+void printDelay() {
+    if(beats[0] +  beats[1] + beats[2] >= 2) {
+        Serial.println(millis());
+    }
+}
 #endif
 #if !GENERATE_BEATMAP
 
@@ -350,9 +350,10 @@ void detectbuttonpress(){
 void loop(){
 
 #if GENERATE_BEATMAP
-  prevBeat = millis();
   readspectrum(); 
   detectBeat(); 
+  printDelay();
+    
 
   // Test Code
 
@@ -366,6 +367,19 @@ void loop(){
   past1 = millis();
  }*/
 #if !GENERATE_BEATMAP
+ for(int i = 0; i < DelayDataLen; i++) {
+     if (millis() ==  DelayData[i]) {
+        colrandom();
+        lightLED();
+        detectbuttonpress();
+        timingwindow();
+             if (millis()- pastrow > 250){
+                pastrow = millis();
+                shift(); 
+            }
+        }
+   }
+  /*  
  if (millis()-past > 500){
   past = millis();
   colrandom();
@@ -379,6 +393,7 @@ void loop(){
     
     shift(); 
  }
+ */
 #endif
  
 }
