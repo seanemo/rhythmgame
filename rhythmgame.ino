@@ -22,7 +22,7 @@ const int button2 = 36;
 const int button3 = 35;
 const int button4 = 34;
 long int time_counter = 0; // keeps sum of all delays as the game plays
-int *DelayPtr = DelayData;
+int z_index = 0; // Index in DelayData
 #endif
 
 
@@ -115,7 +115,7 @@ void setup()
   past = millis();
   past1 = millis();
   points = 0;
-  ledAnimPlay();
+//  ledAnimPlay();
 #endif
 
 }
@@ -374,28 +374,30 @@ void detectbuttonpress(){
   }
 }
 
-void ledAnimPlay() {
-    for(int delay_time: DelayData) {
+void ledAnimPlay(int delay_time) {
+
       // while (millis() - past < delay_time) {};
      //  delay(delay_time);
-       colrandom();
-       time_counter += delay_time;
-       Serial.println(time_counter / 1000.0);
-       while (millis() - past < 250) {lightLED();}
-       past = millis();
+
+       if (millis() - past > delay_time) {
+           colrandom();
+           past = millis();
+       }
+
+/*
        detectbuttonpress();
        createtimingwindow();
        timingwindow();
        shift();
        }
+       */
+
 }
 
 #endif
 //int i = 0;
 
-int test_arr[1] = {500};
-//int *testPtr = test_arr;
-int i = 0;
+
 void loop(){
 
 #if GENERATE_BEATMAP
@@ -403,25 +405,31 @@ void loop(){
   printDelay();
 
 
-  // Test Code
 
-  //printspectrum(7);
-//  printbeat(3, true);
 #endif
 
  // End Test Code
- /*if (millis()-past1 > 1000){
-  colrandom();
-  past1 = millis();
- }*/
 #if !GENERATE_BEATMAP
 
    //ledAnimPlay(500);
 
 //       DelayPtr++;
-//}
+ledAnimPlay(DelayData[z_index]); // Dereferencing the pointer to get a value
+Serial.println(z_index); // Print out val of array read in to ledAnimPlay
+ lightLED();
+ detectbuttonpress();
+ createtimingwindow();
+ timingwindow();
+ if (millis()- pastrow > 250){
+    pastrow = millis();
 
+    shift();
+ }
 
+ if (z_index + 1 < DelayDataLen) {
+     z_index++;
+}
+//TODO: Uncomment the above portion
 /*
 
  if (millis()-past > 500){
@@ -439,5 +447,4 @@ void loop(){
  }
  */
 #endif
-
 }

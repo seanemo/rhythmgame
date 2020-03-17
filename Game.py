@@ -47,11 +47,13 @@ class Game:
         if vals is None:
             file_content = "#define GENERATE_BEATMAP 1"
         else:
+#            avg = sum(map(lambda x: int(x[:-1]), filter(lambda x: x != '\n' or x != '', vals))) // len(vals)
+            avg = 250
             file_content = f"""
 #define GENERATE_BEATMAP 0
 extern int DelayData[{len(vals)}] = {{{', '.join(vals)}}};
 extern int DelayDataLen = {len(vals)};
-            """
+extern int AvgDelay = {avg};""" 
             print(f"Making array with {len(vals)} ints\n")
         with open("CurrentSongData.h", 'w') as currSongData:
             currSongData.write(file_content)
